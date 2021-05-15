@@ -1,17 +1,17 @@
-let taskList = []
+const mongoose = require('mongoose')
+const dbConfig = require('./mongodb.config')
 
-export function getMyTasks() {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(taskList)
-        }, 500)
+mongoose
+    .connect(dbConfig.url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useCreateIndex: true,
+        useFindAndModify: true
     })
-}
+    .catch(e => {
+        console.error('Connection error', e.message)
+    })
 
-export function addTask(text) {
-    taskList.push(text)
-}
+const db = mongoose.connection
 
-export function deleteTask(id) {
-    taskList.splice(id, 1)
-}
+module.exports = db

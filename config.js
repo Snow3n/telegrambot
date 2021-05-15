@@ -1,2 +1,5 @@
-export const PORT = 3000
-export const TOKEN = '1743417732:AAEugDIUW3v21o0VCGWd4stoBstDseO_JMo'
+module.exports = {
+    PORT: 3000,
+    TOKEN: '1743417732:AAEugDIUW3v21o0VCGWd4stoBstDseO_JMo',
+    PROVIDER_TOKEN: '632593626:TEST:sandbox_i97949459285',
+}
