@@ -21,7 +21,7 @@ mongoose
 const db = mongoose.connection
 // invite links for chats
 const chat_invite_links = ['https://t.me/joinchat/dDSP_btKULljMmNi', ''];
-const chat_id = ['-569193560', '']
+const chats_id = ['-569193560', '']
 // keyboards init
 const exit_keyboard = Markup.keyboard(['exit']).resize();
 const remove_keyboard = Markup.removeKeyboard();
@@ -84,77 +84,68 @@ payoutScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // pay task
 const chatIdScene = new Scenes.BaseScene("chatId");
 chatIdScene.enter(ctx => {
-    ctx.reply("Введите id задачи", exit_keyboard);
+    ctx.reply("Оплатить задачу", { ...exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Оплатить', 'Оплатить')]) });
 })
-chatIdScene.hears("exit", ctx => ctx.scene.leave());
-chatIdScene.on('text', ctx => {
+chatIdScene.action('Оплатить', ctx => {
     try {
-        ctx.session.id = ctx.message.text;
-        if (ctx.message.text.length === 24) {
-            Order.findById(ctx.message.text).then(data => {
-                if (!data) {
-                    ctx.reply('Задание не найдено');
+        Order.findOne({ userId: ctx.callbackQuery.from.id }).then(data => {
+            if (!data) {
+                ctx.reply('Задание не найдено');
+            }
+            else {
+                if (data.paid === true) {
+                    ctx.reply('Задание уже оплачено');
                 }
                 else {
-                    if (data.paid) {
-                        ctx.reply('Задание уже оплачено');
-                    }
-                    else {
-                        ctx.reply("Объявленная цена: " + data.price, main_keyboard);
-                        ctx.replyWithInvoice(getInvoice(ctx.from.id, data.price));
-                        // ctx.telegram.sendMessage(data.performerId, "Заказчик оплатил задачу, можете приступать к выполнению.");
-                        ctx.scene.leave();
-                    }
+                    ctx.session.id = data._id;
+                    ctx.reply("Объявленная цена: " + data.price, main_keyboard);
+                    ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
+                    // ctx.telegram.sendMessage(data.performerId, "Заказчик оплатил задачу, можете приступать к выполнению.");
+                    ctx.scene.leave();
                 }
-            })
-        }
-        else {
-            ctx.reply('Неверный id задания\nПовторите попытку');
-        }
+            }
+        })
     }
     catch (err) {
         ctx.reply('Задание не найдено');
     }
 })
+chatIdScene.hears("exit", ctx => ctx.scene.leave());
+chatIdScene.on('text', ctx => { })
 chatIdScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // close task
 const closeScene = new Scenes.BaseScene("close");
 closeScene.enter(ctx => {
-    ctx.reply("Введите id выполненной задачи", exit_keyboard);
+    ctx.reply("Завершить задачу", { ...exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Закрыть задачу', 'Закрыть задачу')]) });
 })
-closeScene.hears("exit", ctx => ctx.scene.leave());
-closeScene.on('text', ctx => {
+closeScene.action('Закрыть задачу', ctx => {
     try {
-        ctx.session.id = ctx.message.text;
-        if (ctx.message.text.length === 24) {
-            Order.findByIdAndUpdate(ctx.message.text, { status: false, moneyOut: false, paid: true }).then(data => {
-                if (!data) {
-                    ctx.reply('Задание не найдено');
+        Order.findOneAndUpdate({ userId: ctx.callbackQuery.from.id, status: true, paid: true }, { status: false, moneyOut: false, paid: true }).then(data => {
+            if (!data) {
+                ctx.reply('Задача не найдено');
+            }
+            else {
+                if (!data.status) {
+                    ctx.reply('Задание уже закрыто');
+                }
+                else if (!data.paid) {
+                    ctx.reply('Вы не можете закрыть задание не оплатив его');
                 }
                 else {
-                    if (!data.status) {
-                        ctx.reply('Задание уже закрыто');
-                    }
-                    else if (!data.paid) {
-                        ctx.reply('Вы не можете закрыть задание не оплатив его');
-                    }
-                    else {
-                        ctx.reply("Вы закрыли задание", main_keyboard);
-                        ctx.telegram.kickChatMember(chat_id[0], data.userId);
-                        ctx.telegram.kickChatMember(chat_id[0], data.performerId);
-                        ctx.scene.leave();
-                    }
+                    ctx.reply("Вы закрыли задание", main_keyboard);
+                    ctx.telegram.kickChatMember(chats_id[0], data.userId);
+                    ctx.telegram.kickChatMember(chats_id[0], data.performerId);
+                    ctx.scene.leave();
                 }
-            })
-        }
-        else {
-            ctx.reply('Неверный id задания\nПовторите попытку');
-        }
+            }
+        })
     }
     catch (err) {
         ctx.reply('Задание не найдено');
     }
 })
+closeScene.hears("exit", ctx => ctx.scene.leave());
+closeScene.on('text', ctx => { })
 closeScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // task name
 const nameScene = new Scenes.BaseScene("name");
@@ -302,35 +293,36 @@ bot.action('✅ Опубликовать', async (ctx, next) => {
 });
 bot.action('🤝 Беру', ctx => {
     if (ctx.callbackQuery.message.photo) {
-        Order.find({ performerId: ctx.callbackQuery.from.id, status: true }).then(data => {
+        Order.find({ performerId: ctx.callbackQuery.from.id, status: true }).then(async data => {
             if (data.length >= 1) {
                 ctx.telegram.sendMessage(ctx.callbackQuery.from.id, "Вы уже взялись за выполнение задачи. Перед тем как взять новую, завершите предыдущие.");
             }
             else {
-                Order.findOneAndUpdate({ _id: ctx.callbackQuery.message.caption.slice(4, 28) }, { performerId: ctx.callbackQuery.from.id })
-                bot.telegram.editMessageReplyMarkup(ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, { ...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]) });
-                bot.telegram.sendPhoto(`${ctx.callbackQuery.from.id}`,
-                    ctx.callbackQuery.message.photo[2].file_id,
-                    { caption: `${ctx.callbackQuery.message.caption}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
-                bot.telegram.sendPhoto(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 10, ctx.callbackQuery.message.caption.length).trim(),
-                    ctx.callbackQuery.message.photo[2].file_id,
-                    { caption: `${ctx.callbackQuery.message.caption}\n\n@${ctx.callbackQuery.from.username} принял вашу задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" })
+                await Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(4, 28), { performerId: ctx.callbackQuery.from.id }).then(data => {
+                    bot.telegram.editMessageReplyMarkup(ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, { ...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]) });
+                    bot.telegram.sendPhoto(`${ctx.callbackQuery.from.id}`,
+                        ctx.callbackQuery.message.photo[2].file_id,
+                        { caption: `${ctx.callbackQuery.message.caption}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
+                    bot.telegram.sendPhoto(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 10, ctx.callbackQuery.message.caption.length).trim(),
+                        ctx.callbackQuery.message.photo[2].file_id,
+                        { caption: `${ctx.callbackQuery.message.caption}\n\n@${ctx.callbackQuery.from.username} принял вашу задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
+                });
             }
         })
     }
     else {
-        Order.find({ performerId: ctx.callbackQuery.from.id, status: true }).then(data => {
+        Order.find({ performerId: ctx.callbackQuery.from.id, status: true }).then(async data => {
             if (data.length >= 1) {
                 ctx.telegram.sendMessage(ctx.callbackQuery.from.id, "Вы уже взялись за выполнение задачи. Перед тем как взять новую, завершите предыдущие.");
             }
             else {
-                Order.findOneAndUpdate({ _id: ctx.callbackQuery.message.text.slice(4, 28) }, { performerId: ctx.callbackQuery.from.id });
-                bot.telegram.editMessageReplyMarkup(ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, { ...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]) });
-
-                bot.telegram.sendMessage(`${ctx.callbackQuery.from.id}`,
-                    `${ctx.callbackQuery.message.text}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, { parse_mode: "HTML" });
-                bot.telegram.sendMessage(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 10, ctx.callbackQuery.message.text.length).trim(),
-                    `${ctx.callbackQuery.message.text}\n\n${ctx.callbackQuery.from.username} принял вашу задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, { parse_mode: "HTML" })
+                await Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(4, 28), { performerId: ctx.callbackQuery.from.id }).then(data => {
+                    bot.telegram.editMessageReplyMarkup(ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, { ...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]) });
+                    bot.telegram.sendMessage(`${ctx.callbackQuery.from.id}`,
+                        `${ctx.callbackQuery.message.text}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, { parse_mode: "HTML" });
+                    bot.telegram.sendMessage(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 10, ctx.callbackQuery.message.text.length).trim(),
+                        `${ctx.callbackQuery.message.text}\n\n${ctx.callbackQuery.from.username} принял вашу задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, { parse_mode: "HTML" });
+                });
             }
         })
     }
