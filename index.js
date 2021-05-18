@@ -1,6 +1,5 @@
 'use strict';
 const express = require('express');
-// const { PORT, TOKEN, PROVIDER_TOKEN } = require("./config.js");
 const { Telegraf, Scenes, session, Markup } = require("telegraf");
 const Order = require('./model');
 const mongoose = require('mongoose');
@@ -27,6 +26,8 @@ const exit_keyboard = Markup.keyboard(['exit']).resize();
 const remove_keyboard = Markup.removeKeyboard();
 const main_keyboard = Markup.keyboard([
     ['🗒 Создать задание', '🗄 Мои задания'],
+    ['💸 Оплатить задачу', '✅ Завершить задачу'],
+    ['💎 Вывести деньги']
 ]).resize();
 
 const app = express(); // server init
@@ -88,27 +89,47 @@ chatIdScene.enter(ctx => {
 })
 chatIdScene.action('Оплатить', ctx => {
     try {
-        Order.findOne({ userId: ctx.callbackQuery.from.id }).then(data => {
-            if (!data) {
-                ctx.reply('Задание не найдено');
-            }
-            else {
-                if (data.paid === true) {
-                    ctx.reply('Задание уже оплачено');
+        Order.find({ userId: ctx.callbackQuery.from.id, status: true, paid: false }).then(data => {
+            data.map(async (d) => {
+                if (d.imageId) {
+                    const link = await ctx.telegram.getFile(d.imageId);
+                    ctx.replyWithPhoto(`${link.file_id}`, {
+                        caption: `Вы заказчик
+                        \nСтатус: ${d.status ? 'открыт' : 'закрыт'}, 
+                        \nНазвание предмета:  <b>${d.name}</b>, 
+                        \nОписание задания: <b>${d.description}</b>, 
+                        \nДедлайн: <b>${d.deadline}</b>, 
+                        \nЦена: <b>${d.price}</b>
+                        \n${d._id}`,
+                        parse_mode: "HTML",
+                        ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
+
+                    })
+                } else {
+                    ctx.reply(`Вы заказчик
+                    \nСтатус ${d.status ? 'открыт' : 'закрыт'}, 
+                \nНазвание предмета:  <b>${d.name}</b>, 
+                \nОписание задания: <b>${d.description}</b>, 
+                \nДедлайн: <b>${d.deadline}</b>, 
+                \nЦена: <b>${d.price}</b>
+                \n${d._id}`, {
+                        parse_mode: "HTML",
+                        ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить', '💸 Оплатить'])) : null,
+
+                    });
                 }
-                else {
-                    ctx.session.id = data._id;
-                    ctx.reply("Объявленная цена: " + data.price, main_keyboard);
-                    ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
-                    // ctx.telegram.sendMessage(data.performerId, "Заказчик оплатил задачу, можете приступать к выполнению.");
-                    ctx.scene.leave();
-                }
-            }
+            });
+
         })
     }
     catch (err) {
         ctx.reply('Задание не найдено');
     }
+})
+chatIdScene.action('💸 Оплатить', ctx => {
+    ctx.session.id = ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length);
+    ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
+    ctx.scene.leave();
 })
 chatIdScene.hears("exit", ctx => ctx.scene.leave());
 chatIdScene.on('text', ctx => { })
@@ -120,29 +141,45 @@ closeScene.enter(ctx => {
 })
 closeScene.action('Закрыть задачу', ctx => {
     try {
-        Order.findOneAndUpdate({ userId: ctx.callbackQuery.from.id, status: true, paid: true }, { status: false, moneyOut: false, paid: true }).then(data => {
-            if (!data) {
-                ctx.reply('Задача не найдено');
-            }
-            else {
-                if (!data.status) {
-                    ctx.reply('Задание уже закрыто');
+        Order.find({ userId: ctx.callbackQuery.from.id, status: true, paid: true }).then(data => {
+            data.map(async (d) => {
+                if (d.imageId) {
+                    const link = await ctx.telegram.getFile(d.imageId);
+                    ctx.replyWithPhoto(`${link.file_id}`, {
+                        caption: `Вы заказчик
+                        \nСтатус: ${d.status ? 'открыт' : 'закрыт'}, 
+                        \nНазвание предмета:  <b>${d.name}</b>, 
+                        \nОписание задания: <b>${d.description}</b>, 
+                        \nДедлайн: <b>${d.deadline}</b>, 
+                        \nЦена: <b>${d.price}</b>
+                        \n${d._id}`,
+                        parse_mode: "HTML",
+                        ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить', '✅ Завершить'])) : null,
+                    })
+                } else {
+                    ctx.reply(`Вы заказчик
+                    \nСтатус ${d.status ? 'открыт' : 'закрыт'}, 
+                    \nНазвание предмета:  <b>${d.name}</b>, 
+                    \nОписание задания: <b>${d.description}</b>, 
+                    \nДедлайн: <b>${d.deadline}</b>, 
+                    \nЦена: <b>${d.price}</b>
+                    \n${d._id}`, {
+                        parse_mode: "HTML",
+                        ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить', '✅ Завершить'])) : null,
+                    });
                 }
-                else if (!data.paid) {
-                    ctx.reply('Вы не можете закрыть задание не оплатив его');
-                }
-                else {
-                    ctx.reply("Вы закрыли задание", main_keyboard);
-                    ctx.telegram.kickChatMember(chats_id[0], data.userId);
-                    ctx.telegram.kickChatMember(chats_id[0], data.performerId);
-                    ctx.scene.leave();
-                }
-            }
+            });
         })
     }
     catch (err) {
         ctx.reply('Задание не найдено');
     }
+})
+closeScene.action('✅ Завершить', ctx => {
+    Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), {status: false, moneyOut: false})
+    .then(data => {
+        ctx.reply("Вы закрыли задание", main_keyboard);
+    })
 })
 closeScene.hears("exit", ctx => ctx.scene.leave());
 closeScene.on('text', ctx => { })
@@ -340,6 +377,8 @@ bot.hears("🗄 Мои задания", async (ctx) => {
                     \nДедлайн: <b>${d.deadline}</b>, 
                     \nЦена: <b>${d.price}</b>`,
                     parse_mode: "HTML",
+                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
+                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 })
             } else {
                 ctx.reply(`Вы заказчик
@@ -349,6 +388,8 @@ bot.hears("🗄 Мои задания", async (ctx) => {
             \nДедлайн: <b>${d.deadline}</b>, 
             \nЦена: <b>${d.price}</b>`, {
                     parse_mode: "HTML",
+                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
+                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 });
             }
         });
@@ -365,6 +406,8 @@ bot.hears("🗄 Мои задания", async (ctx) => {
                     \nДедлайн: <b>${d.deadline}</b>, 
                     \nЦена: <b>${d.price}</b>`,
                     parse_mode: "HTML",
+                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
+                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 })
             } else {
                 ctx.reply(`Вы исполнитель
@@ -374,11 +417,23 @@ bot.hears("🗄 Мои задания", async (ctx) => {
             \nДедлайн: <b>${d.deadline}</b>, 
             \nЦена: <b>${d.price}</b>`, {
                     parse_mode: "HTML",
+                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
+                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 });
             }
         });
     });
 });
+
+bot.hears('💎 Вывести деньги', ctx => {
+    let money = 0;
+    await Order.find({ performerId: ctx.message.from.id, status: false, moneyOut: false }).then(data => {
+        data.map(d => {
+            money += Number(d.price);
+        })
+    })
+    ctx.reply("Ваш баланс: " + money, Markup.inlineKeyboard([Markup.button.callback('💰 Вывести', '💰 Вывести')]));
+})
 
 bot.command('payout', async ctx => {
     let money = 0;
@@ -398,9 +453,17 @@ bot.action('✅ Забрали', ctx => {
 
 });
 
+bot.hears('✅ Завершить задачу', ctx => {
+    ctx.scene.enter('close');
+})
+
 bot.command('close', ctx => {
     ctx.scene.enter('close');
 });
+
+bot.hears('💸 Оплатить задачу', ctx => {
+    ctx.scene.enter('chatId');
+})
 
 bot.command('pay', (ctx) => {
     ctx.scene.enter("chatId");
@@ -434,8 +497,8 @@ bot.command('start', (ctx) => {
 
 bot.hears("🗒 Создать задание", (ctx) => {
     Order.find({ userId: ctx.message.from.id, status: true }).then(data => {
-        if (data.length >= 1) {
-            ctx.reply("У вас уже открыта сделка. Чтобы создать новую, завершите открытые сделки");
+        if (data.length > 3) {
+            ctx.reply("Максимальное количество одновременно открытых сделок 3. Чтобы создать новую, завершите открытые сделки");
         }
         else {
             ctx.scene.enter("name");
