@@ -337,9 +337,7 @@ bot.action('🤝 Беру', ctx => {
             }
             else {
                 await Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(4, 28), { performerId: ctx.callbackQuery.from.id }).then(data => {
-                    bot.telegram.editMessageReplyMarkup(ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, { ...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]) });
-                    // ctx.editMessageCaption(ctx.callbackQuery.message.caption )
-                    console.log(ctx.callbackQuery.message);
+                    bot.telegram.editMessageReplyMarkup(ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]));
                     bot.telegram.sendPhoto(`${ctx.callbackQuery.from.id}`,
                         ctx.callbackQuery.message.photo[2].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
@@ -357,7 +355,7 @@ bot.action('🤝 Беру', ctx => {
             }
             else {
                 await Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(4, 28), { performerId: ctx.callbackQuery.from.id }).then(data => {
-                    bot.telegram.editMessageReplyMarkup(ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, { ...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]) });
+                    bot.telegram.editMessageReplyMarkup(ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]));
                     bot.telegram.sendMessage(`${ctx.callbackQuery.from.id}`,
                         `${ctx.callbackQuery.message.text}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, { parse_mode: "HTML" });
                     bot.telegram.sendMessage(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 10, ctx.callbackQuery.message.text.length).trim(),
