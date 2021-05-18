@@ -27,7 +27,8 @@ const remove_keyboard = Markup.removeKeyboard();
 const main_keyboard = Markup.keyboard([
     ['🗒 Создать задание', '🗄 Мои задания'],
     ['💸 Оплатить задачу', '✅ Завершить задачу'],
-    ['💎 Вывести деньги', 'exit']
+    ['💎 Вывести деньги', 'exit'],
+    ['👤 Поддержка'],
 ]).resize();
 
 const app = express(); // server init
@@ -482,8 +483,12 @@ bot.command('help', ctx => {
     ctx.reply('/start\n/help\n/pay\n/close\n/payout\n/admin');
 });
 
+bot.hears('👤 Поддержка', ctx => {
+    ctx.reply("За помощью обратитесь к администратору @Supp_freelance_bot");
+})
+
 bot.command('admin', ctx => {
-    ctx.reply("За помощью обратитесь к администратору @snwns");
+    ctx.reply("За помощью обратитесь к администратору @Supp_freelance_bot");
 })
 
 bot.command('start', (ctx) => {
