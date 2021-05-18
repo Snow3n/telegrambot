@@ -86,8 +86,8 @@ payoutScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // pay task
 const chatIdScene = new Scenes.BaseScene("chatId");
 chatIdScene.enter(ctx => {
-    ctx.reply("Оплатить задачу", { ...exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Оплатить', 'Оплатить')]) });
-})
+    ctx.reply("Оплатить задачу\nесли застряли попробуйте нажать 'exit'", { ...exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Оплатить', 'Оплатить')]) });
+});
 chatIdScene.action('Оплатить', ctx => {
     try {
         Order.find({ userId: ctx.callbackQuery.from.id, status: true, paid: false }).then(data => {
@@ -123,22 +123,22 @@ chatIdScene.action('Оплатить', ctx => {
     catch (err) {
         ctx.reply('Задание не найдено');
     }
-})
+});
 chatIdScene.action('💸 Оплатить', ctx => {
     ctx.session.id = ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length);
     Order.findById(ctx.session.id).then(data => {
         ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
         ctx.scene.leave();
     })
-})
+});
 chatIdScene.hears("exit", ctx => ctx.scene.leave());
-chatIdScene.on('text', ctx => { })
+chatIdScene.on('text', ctx => { });
 chatIdScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // close task
 const closeScene = new Scenes.BaseScene("close");
 closeScene.enter(ctx => {
-    ctx.reply("Завершить задачу", { ...exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Закрыть задачу', 'Закрыть задачу')]) });
-})
+    ctx.reply("Завершить задачу\nесли застряли попробуйте нажать 'exit'", { ...exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Закрыть задачу', 'Закрыть задачу')]) });
+});
 closeScene.action('Закрыть задачу', ctx => {
     try {
         Order.find({ userId: ctx.callbackQuery.from.id, status: true, paid: true }).then(data => {
@@ -181,9 +181,9 @@ closeScene.action('✅ Завершить', ctx => {
         ctx.reply("Вы закрыли задание", main_keyboard);
         ctx.scene.leave();
     })
-})
+});
 closeScene.hears("exit", ctx => ctx.scene.leave());
-closeScene.on('text', ctx => { })
+closeScene.on('text', ctx => { });
 closeScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // task name
 const nameScene = new Scenes.BaseScene("name");
@@ -202,7 +202,7 @@ nameScene.hears("exit", (ctx) => {
 nameScene.on("text", ctx => {
     ctx.session.name = ctx.message.text;
     return ctx.scene.enter('description');
-})
+});
 nameScene.on("message", (ctx) => ctx.reply("🥺я не понимаю, попробуйте буквы..."));
 // task description
 const descriptionScene = new Scenes.BaseScene("description");
@@ -215,7 +215,7 @@ descriptionScene.hears("exit", (ctx) => {
 descriptionScene.on("text", ctx => {
     ctx.session.description = ctx.message.text;
     return ctx.scene.enter('photo');
-})
+});
 descriptionScene.on("message", (ctx) => ctx.reply("🥺я не понимаю, попробуйте буквы..."));
 // task photo
 const photoScene = new Scenes.BaseScene("photo");
@@ -332,12 +332,14 @@ bot.action('✅ Опубликовать', async (ctx, next) => {
 bot.action('🤝 Беру', ctx => {
     if (ctx.callbackQuery.message.photo) {
         Order.find({ performerId: ctx.callbackQuery.from.id, status: true }).then(async data => {
-            if (data.length >= 1) {
+            if (data.length > 3) {
                 ctx.telegram.sendMessage(ctx.callbackQuery.from.id, "Вы уже взялись за выполнение задачи. Перед тем как взять новую, завершите предыдущие.");
             }
             else {
                 await Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(4, 28), { performerId: ctx.callbackQuery.from.id }).then(data => {
                     bot.telegram.editMessageReplyMarkup(ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, { ...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]) });
+                    // ctx.editMessageCaption(ctx.callbackQuery.message.caption )
+                    console.log(ctx.callbackQuery.message);
                     bot.telegram.sendPhoto(`${ctx.callbackQuery.from.id}`,
                         ctx.callbackQuery.message.photo[2].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
@@ -350,7 +352,7 @@ bot.action('🤝 Беру', ctx => {
     }
     else {
         Order.find({ performerId: ctx.callbackQuery.from.id, status: true }).then(async data => {
-            if (data.length >= 1) {
+            if (data.length > 3) {
                 ctx.telegram.sendMessage(ctx.callbackQuery.from.id, "Вы уже взялись за выполнение задачи. Перед тем как взять новую, завершите предыдущие.");
             }
             else {
@@ -364,7 +366,7 @@ bot.action('🤝 Беру', ctx => {
             }
         })
     }
-})
+});
 bot.hears("🗄 Мои задания", async (ctx) => {
     await Order.find({ userId: ctx.message.from.id }).then(data => {
         data.map(async (d) => {
