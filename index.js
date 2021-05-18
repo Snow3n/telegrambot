@@ -425,7 +425,7 @@ bot.hears("🗄 Мои задания", async (ctx) => {
     });
 });
 
-bot.hears('💎 Вывести деньги', ctx => {
+bot.hears('💎 Вывести деньги', async ctx => {
     let money = 0;
     await Order.find({ performerId: ctx.message.from.id, status: false, moneyOut: false }).then(data => {
         data.map(d => {
