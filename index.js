@@ -305,7 +305,7 @@ bot.action('✅ Опубликовать', async (ctx, next) => {
             id = data._id;
         });
         bot.telegram.sendPhoto('@FastCleverFreelance', ctx.session.photo.file_id, {
-            caption: `id: ${id}\n\n${ctx.session.message} \n\nuser_id: ${ctx.callbackQuery.from.id}`,
+            caption: `id: ${id}\n\n${ctx.session.message} \n\n#${order.name}\n\nuser_id: ${ctx.callbackQuery.from.id}`,
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([Markup.button.callback('🤝 Беру', '🤝 Беру')])
         })
@@ -323,7 +323,7 @@ bot.action('✅ Опубликовать', async (ctx, next) => {
         await order.save().then(data => {
             id = data._id
         });
-        bot.telegram.sendMessage('@FastCleverFreelance', `id: ${id}\n\n${ctx.session.message} \n\nuser_id: ${ctx.callbackQuery.from.id}`, {
+        bot.telegram.sendMessage('@FastCleverFreelance', `id: ${id}\n\n${ctx.session.message} \n\n#${order.name}\n\nuser_id: ${ctx.callbackQuery.from.id}`, {
             parse_mode: "HTML",
             ...Markup.inlineKeyboard([Markup.button.callback('🤝 Беру', '🤝 Беру')])
         });
