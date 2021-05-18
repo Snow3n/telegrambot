@@ -102,8 +102,7 @@ chatIdScene.action('Оплатить', ctx => {
                         \nЦена: <b>${d.price}</b>
                         \n${d._id}`,
                         parse_mode: "HTML",
-                        ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
-
+                        ...Markup.inlineKeyboard([Markup.button.callback('💸 Оплатить', '💸 Оплатить')]),
                     })
                 } else {
                     ctx.reply(`Вы заказчик
@@ -114,12 +113,10 @@ chatIdScene.action('Оплатить', ctx => {
                 \nЦена: <b>${d.price}</b>
                 \n${d._id}`, {
                         parse_mode: "HTML",
-                        ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить', '💸 Оплатить'])) : null,
-
+                        ...Markup.inlineKeyboard([Markup.button.callback('💸 Оплатить', '💸 Оплатить')]),
                     });
                 }
             });
-
         })
     }
     catch (err) {
@@ -128,8 +125,10 @@ chatIdScene.action('Оплатить', ctx => {
 })
 chatIdScene.action('💸 Оплатить', ctx => {
     ctx.session.id = ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length);
-    ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
-    ctx.scene.leave();
+    Order.findById(ctx.session.id).then(data => {
+        ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
+        ctx.scene.leave();
+    })
 })
 chatIdScene.hears("exit", ctx => ctx.scene.leave());
 chatIdScene.on('text', ctx => { })
@@ -154,7 +153,7 @@ closeScene.action('Закрыть задачу', ctx => {
                         \nЦена: <b>${d.price}</b>
                         \n${d._id}`,
                         parse_mode: "HTML",
-                        ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить', '✅ Завершить'])) : null,
+                        ...Markup.inlineKeyboard([Markup.button.callback('✅ Завершить', '✅ Завершить')]),
                     })
                 } else {
                     ctx.reply(`Вы заказчик
@@ -165,7 +164,7 @@ closeScene.action('Закрыть задачу', ctx => {
                     \nЦена: <b>${d.price}</b>
                     \n${d._id}`, {
                         parse_mode: "HTML",
-                        ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить', '✅ Завершить'])) : null,
+                        ...Markup.inlineKeyboard([Markup.button.callback('✅ Завершить', '✅ Завершить')]),
                     });
                 }
             });
@@ -179,6 +178,7 @@ closeScene.action('✅ Завершить', ctx => {
     Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), {status: false, moneyOut: false})
     .then(data => {
         ctx.reply("Вы закрыли задание", main_keyboard);
+        ctx.scene.leave();
     })
 })
 closeScene.hears("exit", ctx => ctx.scene.leave());
