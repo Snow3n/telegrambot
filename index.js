@@ -169,6 +169,35 @@ closeScene.action('Закрыть задачу', ctx => {
                     });
                 }
             });
+        });
+        Order.find({userId: ctx.callbackQuery.from.id, status: true, paid: false, performerId: undefined}).then(data => {
+            data.map(async d => {
+                if (d.imageId) {
+                    const link = await ctx.telegram.getFile(d.imageId);
+                    ctx.replyWithPhoto(`${link.file_id}`, {
+                        caption: `Вы заказчик
+                        \nСтатус: ${d.status ? 'открыт' : 'закрыт'}, 
+                        \nНазвание предмета:  <b>${d.name}</b>, 
+                        \nОписание задания: <b>${d.description}</b>, 
+                        \nДедлайн: <b>${d.deadline}</b>, 
+                        \nЦена: <b>${d.price}</b>
+                        \n${d._id}`,
+                        parse_mode: "HTML",
+                        ...Markup.inlineKeyboard([Markup.button.callback('❌ Закрыть задачу', '❌ Закрыть задачу')]),
+                    })
+                } else {
+                    ctx.reply(`Вы заказчик
+                    \nСтатус ${d.status ? 'открыт' : 'закрыт'}, 
+                    \nНазвание предмета:  <b>${d.name}</b>, 
+                    \nОписание задания: <b>${d.description}</b>, 
+                    \nДедлайн: <b>${d.deadline}</b>, 
+                    \nЦена: <b>${d.price}</b>
+                    \n${d._id}`, {
+                        parse_mode: "HTML",
+                        ...Markup.inlineKeyboard([Markup.button.callback('❌ Закрыть задачу', '❌ Закрыть задачу')]),
+                    });
+                }
+            })
         })
     }
     catch (err) {
@@ -176,12 +205,39 @@ closeScene.action('Закрыть задачу', ctx => {
     }
 })
 closeScene.action('✅ Завершить', ctx => {
-    Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), {status: false, moneyOut: false})
-    .then(data => {
-        ctx.reply("Вы закрыли задание", main_keyboard);
-        ctx.scene.leave();
-    })
+    if(ctx.callbackQuery.message.photo){
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), {status: false, moneyOut: false})
+        .then(data => {
+            ctx.reply("Вы закрыли задание", main_keyboard);
+            ctx.scene.leave();
+        })
+    }
+    else{
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), {status: false, moneyOut: false})
+        .then(data => {
+            ctx.reply("Вы закрыли задание", main_keyboard);
+            ctx.scene.leave();
+        })
+    }
 });
+closeScene.action('❌ Закрыть задачу', ctx => {
+    if(ctx.callbackQuery.message.photo){
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), {status: false, moneyOut: true})
+        .then(data => {
+            ctx.reply("Вы закрыли задание", main_keyboard);
+            bot.telegram.sendPhoto('@payouts_bot', ctx.telegram.getFile(data.imageId.file_id) ,"УДАЛИТЬ\n\n" + ctx.callbackQuery.message.caption);
+            ctx.scene.leave();
+        })
+    }
+    else{
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), {status: false, moneyOut: true})
+        .then(data => {
+            ctx.reply("Вы закрыли задание", main_keyboard);
+            bot.telegram.sendMessage('@payouts_bot', "УДАЛИТЬ\n\n" + ctx.callbackQuery.message.text);
+            ctx.scene.leave();
+        })
+    }
+})
 closeScene.hears("exit", ctx => ctx.scene.leave());
 closeScene.on('text', ctx => { });
 closeScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
