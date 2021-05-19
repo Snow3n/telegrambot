@@ -138,7 +138,12 @@ payScene.action('Оплатить', ctx => {
     }
 });
 payScene.action('💸 Оплатить', ctx => {
-    ctx.session.id = ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length);
+    if(ctx.callbackQuery.message.photo){
+        ctx.session.id = ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length);
+    }
+    else{
+        ctx.session.id = ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length);
+    }
     Order.findById(ctx.session.id).then(data => {
         // ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
         ctx.reply(`Отправьте ${data.price} грн на реквизиты: \n
