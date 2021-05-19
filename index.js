@@ -342,7 +342,7 @@ bot.action('🤝 Беру', ctx => {
                         ctx.callbackQuery.message.photo[ctx.callbackQuery.message.photo.length - 1].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
                     bot.telegram.sendPhoto(data.userId/*ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 10, ctx.callbackQuery.message.caption.length).trim()*/,
-                        ctx.callbackQuery.message.photo[2].file_id,
+                        ctx.callbackQuery.message.photo[ctx.callbackQuery.message.photo.length - 1].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\n@${ctx.callbackQuery.from.username} принял вашу задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
                 });
             }
