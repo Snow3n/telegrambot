@@ -620,7 +620,7 @@ bot.command('pay', (ctx) => {
 //         ctx.reply('Успешно оплачено');
 //         ctx.telegram.sendMessage(data.performerId, "Заказчик оплатил задачу, можете приступать к выполнению.");
 //     });
-});
+// });
 
 bot.command('help', ctx => {
     ctx.reply('/start\n/help\n/pay\n/close\n/payout\n/admin');
