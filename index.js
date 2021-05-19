@@ -169,8 +169,8 @@ closeScene.action('Закрыть задачу', ctx => {
     try {
         Order.find({ userId: ctx.callbackQuery.from.id, status: true, paid: true }).then(data => {
             if(data.length === 0) {
-                ctx.reply("Задания не найдены");
-                ctx.scene.leave();
+                ctx.reply("Задания не найдены\n\nнажмите exit для выхода");
+                // ctx.scene.leave();
             }
             data.map(async (d) => {
                 if (d.imageId) {
@@ -202,8 +202,8 @@ closeScene.action('Закрыть задачу', ctx => {
         });
         Order.find({userId: ctx.callbackQuery.from.id, status: true, paid: false, performerId: undefined}).then(data => {
             if(data.length === 0) {
-                ctx.reply("Задания не найдены");
-                ctx.scene.leave();
+                ctx.reply("Задания не найдены\n\nнажмите exit для выхода");
+                // ctx.scene.leave();
             }
             data.map(async d => {
                 if (d.imageId) {
@@ -240,14 +240,14 @@ closeScene.action('Закрыть задачу', ctx => {
 })
 closeScene.action('✅ Завершить', ctx => {
     if(ctx.callbackQuery.message.photo){
-        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 25, ctx.callbackQuery.message.caption.length - 1), {status: false, moneyOut: false})
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), {status: false, moneyOut: false})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
             ctx.scene.leave();
         })
     }
     else{
-        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 25, ctx.callbackQuery.message.text.length - 1), {status: false, moneyOut: false})
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), {status: false, moneyOut: false})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
             ctx.scene.leave();
@@ -256,7 +256,7 @@ closeScene.action('✅ Завершить', ctx => {
 });
 closeScene.action('❌ Закрыть задачу', ctx => {
     if(ctx.callbackQuery.message.photo){
-        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 25, ctx.callbackQuery.message.caption.length - 1), {status: false, moneyOut: true})
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), {status: false, moneyOut: true})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
             bot.telegram.sendMessage('@payouts_bot', "УДАЛИТЬ\n\n" + ctx.callbackQuery.message.caption);
@@ -264,7 +264,7 @@ closeScene.action('❌ Закрыть задачу', ctx => {
         })
     }
     else{
-        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 25, ctx.callbackQuery.message.text.length - 1), {status: false, moneyOut: true})
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), {status: false, moneyOut: true})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
             bot.telegram.sendMessage('@payouts_bot', "УДАЛИТЬ\n\n" + ctx.callbackQuery.message.text);
