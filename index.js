@@ -366,7 +366,10 @@ bot.action('🤝 Беру', ctx => {
     }
 });
 bot.hears("🗄 Мои задания", async (ctx) => {
-    await Order.find({ userId: ctx.message.from.id }).then(data => {
+    ctx.reply("Выберите фильтр", Markup.inlineKeyboard([Markup.button.callback('Открытые задания', 'Открытые задания'), Markup.button.callback('Завершенные задания', 'Завершенные задания')]));
+})
+bot.action('Открытые задания', async ctx => {
+    await Order.find({ userId: ctx.message.from.id, status: true }).then(data => {
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
@@ -395,7 +398,68 @@ bot.hears("🗄 Мои задания", async (ctx) => {
             }
         });
     });
-    await Order.find({ performerId: ctx.message.from.id }).then(data => {
+    await Order.find({ performerId: ctx.message.from.id, status: true }).then(data => {
+        data.map(async (d) => {
+            if (d.imageId) {
+                const link = await ctx.telegram.getFile(d.imageId);
+                ctx.replyWithPhoto(`${link.file_id}`, {
+                    caption: `Вы исполнитель
+                    \nСтатус: ${d.status ? 'открыт' : 'закрыт'}, 
+                    \nНазвание предмета:  <b>${d.name}</b>, 
+                    \nОписание задания: <b>${d.description}</b>, 
+                    \nДедлайн: <b>${d.deadline}</b>, 
+                    \nЦена: <b>${d.price}</b>`,
+                    parse_mode: "HTML",
+                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
+                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
+                })
+            } else {
+                ctx.reply(`Вы исполнитель
+                \nСтатус ${d.status ? 'открыт' : 'закрыт'}, 
+            \nНазвание предмета:  <b>${d.name}</b>, 
+            \nОписание задания: <b>${d.description}</b>, 
+            \nДедлайн: <b>${d.deadline}</b>, 
+            \nЦена: <b>${d.price}</b>`, {
+                    parse_mode: "HTML",
+                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
+                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
+                });
+            }
+        });
+    });
+});
+
+bot.action('Завершенные задания', async ctx => {
+    await Order.find({ userId: ctx.message.from.id, status: false }).then(data => {
+        data.map(async (d) => {
+            if (d.imageId) {
+                const link = await ctx.telegram.getFile(d.imageId);
+                ctx.replyWithPhoto(`${link.file_id}`, {
+                    caption: `Вы заказчик
+                    \nСтатус: ${d.status ? 'открыт' : 'закрыт'}, 
+                    \nНазвание предмета:  <b>${d.name}</b>, 
+                    \nОписание задания: <b>${d.description}</b>, 
+                    \nДедлайн: <b>${d.deadline}</b>, 
+                    \nЦена: <b>${d.price}</b>`,
+                    parse_mode: "HTML",
+                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
+                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
+                })
+            } else {
+                ctx.reply(`Вы заказчик
+                \nСтатус ${d.status ? 'открыт' : 'закрыт'}, 
+            \nНазвание предмета:  <b>${d.name}</b>, 
+            \nОписание задания: <b>${d.description}</b>, 
+            \nДедлайн: <b>${d.deadline}</b>, 
+            \nЦена: <b>${d.price}</b>`, {
+                    parse_mode: "HTML",
+                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
+                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
+                });
+            }
+        });
+    });
+    await Order.find({ performerId: ctx.message.from.id, status: false }).then(data => {
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
