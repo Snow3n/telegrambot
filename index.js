@@ -146,7 +146,7 @@ payScene.action('💸 Оплатить', ctx => {
     }
     Order.findById(ctx.session.id).then(data => {
         // ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
-        ctx.reply(`Отправьте ${data.price} грн на реквизиты: \n
+        ctx.reply(`Отправьте ${data.price * 1.08} грн на реквизиты: \n
         4441114423581402 монобанк\n
         5168757333449983 приват\n
         ВАЖНО!!! \nВ комментарии к переводу оставьте id задачи ${ctx.session.id}`);
