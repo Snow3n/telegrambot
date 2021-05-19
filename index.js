@@ -3,6 +3,7 @@ const express = require('express');
 const { Telegraf, Scenes, session, Markup } = require("telegraf");
 const Order = require('./model');
 const mongoose = require('mongoose');
+const { getBodyText } = require('telegraf-inline-menu/dist/source/body');
 require('dotenv').config();
 
 // db init
@@ -54,6 +55,18 @@ const getInvoice = (id, price) => {
     return invoice
 }
 // scenes section
+const confirmScene = new Scenes.BaseScene('confirm');
+confirmScene.enter(ctx => {
+    ctx.reply('Введите айди задания', exit_keyboard);
+});
+confirmScene.hears('exit', ctx => ctx.scene.leave());
+confirmScene.on('text', async ctx => {
+    Order.findByIdAndUpdate(ctx.message.text ,{paid: true}).then(data => {
+        ctx.reply('Данные обновлены...');
+    });
+});
+confirmScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
+
 // payout
 const payoutScene = new Scenes.BaseScene("payout");
 payoutScene.enter(ctx => {
@@ -84,11 +97,11 @@ payoutScene.on('text', async ctx => {
 })
 payoutScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // pay task
-const chatIdScene = new Scenes.BaseScene("chatId");
-chatIdScene.enter(ctx => {
+const payScene = new Scenes.BaseScene("pay");
+payScene.enter(ctx => {
     ctx.reply("Оплатить задачу\nесли застряли попробуйте нажать 'exit'", { ...exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Оплатить', 'Оплатить')]) });
 });
-chatIdScene.action('Оплатить', ctx => {
+payScene.action('Оплатить', ctx => {
     try {
         Order.find({ userId: ctx.callbackQuery.from.id, status: true, paid: false }).then(data => {
             data.map(async (d) => {
@@ -124,16 +137,20 @@ chatIdScene.action('Оплатить', ctx => {
         ctx.reply('Задание не найдено');
     }
 });
-chatIdScene.action('💸 Оплатить', ctx => {
+payScene.action('💸 Оплатить', ctx => {
     ctx.session.id = ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length);
     Order.findById(ctx.session.id).then(data => {
-        ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
+        // ctx.replyWithInvoice(getInvoice(ctx.callbackQuery.from.id, data.price));
+        ctx.reply(`Отправьте ${data.price} грн на реквизиты: \n
+        4441114423581402 монобанк\n
+        5168757333449983 приват\n
+        ВАЖНО!!! \nВ комментарии к переводу оставьте id задачи ${ctx.session.id}`);
         ctx.scene.leave();
     })
 });
-chatIdScene.hears("exit", ctx => ctx.scene.leave());
-chatIdScene.on('text', ctx => { });
-chatIdScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
+payScene.hears("exit", ctx => ctx.scene.leave());
+payScene.on('text', ctx => { });
+payScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // close task
 const closeScene = new Scenes.BaseScene("close");
 closeScene.enter(ctx => {
@@ -225,7 +242,7 @@ closeScene.action('❌ Закрыть задачу', ctx => {
         Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), {status: false, moneyOut: true})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
-            bot.telegram.sendPhoto('@payouts_bot', ctx.telegram.getFile(data.imageId.file_id) ,"УДАЛИТЬ\n\n" + ctx.callbackQuery.message.caption);
+            bot.telegram.sendMessage('@payouts_bot', /*ctx.telegram.getFile(data.imageId.file_id) ,*/"УДАЛИТЬ\n\n" + ctx.callbackQuery.message.caption);
             ctx.scene.leave();
         })
     }
@@ -336,7 +353,7 @@ priceScene.on("text", async (ctx) => {
 });
 priceScene.on("message", ctx => ctx.reply("🥺я не понимаю, попробуйте буквы..."));
 
-const stage = new Scenes.Stage([nameScene, descriptionScene, photoScene, deadlineScene, priceScene, chatIdScene, closeScene, payoutScene]);
+const stage = new Scenes.Stage([nameScene, descriptionScene, photoScene, deadlineScene, priceScene, chatIdScene, closeScene, payoutScene, confirmScene]);
 
 bot.use(session());
 bot.use(stage.middleware());
@@ -611,6 +628,10 @@ bot.command('admin', ctx => {
     ctx.reply("За помощью обратитесь к администратору @Supp_freelance_bot");
 })
 
+bot.command('confirm', ctx => {
+    ctx.scene.enter('confirm');
+})
+
 bot.command('start', (ctx) => {
     ctx.reply("Привет", main_keyboard);
 });
@@ -633,3 +654,4 @@ process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
 app.listen(process.env.PORT);
+// TODO: rating
