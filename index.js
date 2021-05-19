@@ -99,11 +99,15 @@ payoutScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // pay task
 const payScene = new Scenes.BaseScene("pay");
 payScene.enter(ctx => {
-    ctx.reply("Оплатить задачу\nесли застряли попробуйте нажать 'exit'", { ...exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Оплатить', 'Оплатить')]) });
+    ctx.reply("Оплатить задачу\nесли застряли попробуйте нажать 'exit'", { exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Оплатить', 'Оплатить')]) });
 });
 payScene.action('Оплатить', ctx => {
     try {
         Order.find({ userId: ctx.callbackQuery.from.id, status: true, paid: false }).then(data => {
+            if(data.length === 0) {
+                ctx.reply("Задания не найдены");
+                ctx.scene.leave();
+            }
             data.map(async (d) => {
                 if (d.imageId) {
                     const link = await ctx.telegram.getFile(d.imageId);
@@ -149,7 +153,8 @@ payScene.action('💸 Оплатить', ctx => {
         ctx.reply(`Отправьте ${data.price * 1.08} грн на реквизиты: \n
         4441114423581402 монобанк\n
         5168757333449983 приват\n
-        ВАЖНО!!! \nВ комментарии к переводу оставьте id задачи ${ctx.session.id}`);
+        ВАЖНО!!! \nВ комментарии к переводу оставьте id задачи`);
+        ctx.reply(ctx.session.id);
         ctx.scene.leave();
     })
 });
@@ -159,11 +164,15 @@ payScene.leave(ctx => ctx.reply("Выхожу", main_keyboard));
 // close task
 const closeScene = new Scenes.BaseScene("close");
 closeScene.enter(ctx => {
-    ctx.reply("Завершить задачу\nесли застряли попробуйте нажать 'exit'", { ...exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Закрыть задачу', 'Закрыть задачу')]) });
+    ctx.reply("Завершить задачу\nесли застряли попробуйте нажать 'exit'", { exit_keyboard, ...Markup.inlineKeyboard([Markup.button.callback('Закрыть задачу', 'Закрыть задачу')]) });
 });
 closeScene.action('Закрыть задачу', ctx => {
     try {
         Order.find({ userId: ctx.callbackQuery.from.id, status: true, paid: true }).then(data => {
+            if(data.length === 0) {
+                ctx.reply("Задания не найдены");
+                ctx.scene.leave();
+            }
             data.map(async (d) => {
                 if (d.imageId) {
                     const link = await ctx.telegram.getFile(d.imageId);
@@ -193,6 +202,10 @@ closeScene.action('Закрыть задачу', ctx => {
             });
         });
         Order.find({userId: ctx.callbackQuery.from.id, status: true, paid: false, performerId: undefined}).then(data => {
+            if(data.length === 0) {
+                ctx.reply("Задания не найдены");
+                ctx.scene.leave();
+            }
             data.map(async d => {
                 if (d.imageId) {
                     const link = await ctx.telegram.getFile(d.imageId);
@@ -353,7 +366,7 @@ priceScene.on("text", async (ctx) => {
         return ctx.scene.leave();
     }
     else {
-        ctx.reply("Введите число");
+        ctx.reply("Введите числовое значение");
     }
 });
 priceScene.on("message", ctx => ctx.reply("🥺я не понимаю, попробуйте буквы..."));
@@ -415,7 +428,7 @@ bot.action('🤝 Беру', ctx => {
             }
             else {
                 await Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), { performerId: ctx.callbackQuery.from.id }).then(data => {
-                    ctx.editMessageCaption('В процессе\n\n' + ctx.callbackQuery.message.caption,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
+                    ctx.editMessageCaption('📙 В процессе\n\n' + ctx.callbackQuery.message.caption,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
                     bot.telegram.sendPhoto(`${ctx.callbackQuery.from.id}`,
                         ctx.callbackQuery.message.photo[ctx.callbackQuery.message.photo.length - 1].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${bot.telegram.getChatMembersCount(chat_invite_links[0].slice(22, 38)) <= 2 ? chat_invite_links[0] : bot.telegram.getChatMembersCount(chat_invite_links[1].slice(22, 38)) <= 2 ? chat_invite_links[1] : bot.telegram.getChatMembersCount(chat_invite_links[2].slice(22, 38)) <= 2 ? chat_invite_links[2] : "Пожалуйста обратитесь к администратору"}`, parse_mode: "HTML" });
@@ -488,8 +501,6 @@ bot.action('Открытые задания', async ctx => {
                     \nДедлайн: <b>${d.deadline}</b>, 
                     \nЦена: <b>${d.price}</b>`,
                     parse_mode: "HTML",
-                    // ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
-                    // ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 })
             } else {
                 ctx.reply(`Вы исполнитель
@@ -499,8 +510,6 @@ bot.action('Открытые задания', async ctx => {
             \nДедлайн: <b>${d.deadline}</b>, 
             \nЦена: <b>${d.price}</b>`, {
                     parse_mode: "HTML",
-                    // ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
-                    // ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 });
             }
         });
@@ -520,8 +529,6 @@ bot.action('Завершенные задания', async ctx => {
                     \nДедлайн: <b>${d.deadline}</b>, 
                     \nЦена: <b>${d.price}</b>`,
                     parse_mode: "HTML",
-                    // ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
-                    // ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 })
             } else {
                 ctx.reply(`Вы заказчик
@@ -531,8 +538,6 @@ bot.action('Завершенные задания', async ctx => {
             \nДедлайн: <b>${d.deadline}</b>, 
             \nЦена: <b>${d.price}</b>`, {
                     parse_mode: "HTML",
-                    // ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
-                    // ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 });
             }
         });
@@ -549,8 +554,6 @@ bot.action('Завершенные задания', async ctx => {
                     \nДедлайн: <b>${d.deadline}</b>, 
                     \nЦена: <b>${d.price}</b>`,
                     parse_mode: "HTML",
-                    // ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
-                    // ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 })
             } else {
                 ctx.reply(`Вы исполнитель
@@ -560,8 +563,6 @@ bot.action('Завершенные задания', async ctx => {
             \nДедлайн: <b>${d.deadline}</b>, 
             \nЦена: <b>${d.price}</b>`, {
                     parse_mode: "HTML",
-                    // ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
-                    // ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
                 });
             }
         });
@@ -612,13 +613,13 @@ bot.command('pay', (ctx) => {
     ctx.scene.enter("pay");
 });
 
-bot.on('pre_checkout_query', (ctx) => ctx.answerPreCheckoutQuery(true)); // ответ на предварительный запрос по оплате
+// bot.on('pre_checkout_query', (ctx) => ctx.answerPreCheckoutQuery(true)); // ответ на предварительный запрос по оплате
 
-bot.on('successful_payment', async (ctx, next) => { // ответ в случае положительной оплаты
-    await Order.findByIdAndUpdate(ctx.session.id, { paid: true }).then(data => {
-        ctx.reply('Успешно оплачено');
-        ctx.telegram.sendMessage(data.performerId, "Заказчик оплатил задачу, можете приступать к выполнению.");
-    });
+// bot.on('successful_payment', async (ctx, next) => { // ответ в случае положительной оплаты
+//     await Order.findByIdAndUpdate(ctx.session.id, { paid: true }).then(data => {
+//         ctx.reply('Успешно оплачено');
+//         ctx.telegram.sendMessage(data.performerId, "Заказчик оплатил задачу, можете приступать к выполнению.");
+//     });
 });
 
 bot.command('help', ctx => {
