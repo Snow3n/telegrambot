@@ -152,8 +152,8 @@ payScene.action('💸 Оплатить', ctx => {
         ctx.reply(`Отправьте ${data.price * 1.08} грн на реквизиты: \n
         4441114423581402 монобанк\n
         5168757333449983 приват\n
-        ВАЖНО!!! \nВ комментарии к переводу оставьте id задачи`);
-        ctx.reply(ctx.session.id);
+        ВАЖНО!!! \nВ комментарии к переводу оставьте id задачи\n\n${ctx.session.id}`);
+        // ctx.reply(ctx.session.id);
         ctx.scene.leave();
     })
 });
@@ -240,14 +240,14 @@ closeScene.action('Закрыть задачу', ctx => {
 })
 closeScene.action('✅ Завершить', ctx => {
     if(ctx.callbackQuery.message.photo){
-        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), {status: false, moneyOut: false})
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 25, ctx.callbackQuery.message.caption.length - 1), {status: false, moneyOut: false})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
             ctx.scene.leave();
         })
     }
     else{
-        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), {status: false, moneyOut: false})
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 25, ctx.callbackQuery.message.text.length - 1), {status: false, moneyOut: false})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
             ctx.scene.leave();
@@ -256,7 +256,7 @@ closeScene.action('✅ Завершить', ctx => {
 });
 closeScene.action('❌ Закрыть задачу', ctx => {
     if(ctx.callbackQuery.message.photo){
-        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), {status: false, moneyOut: true})
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 25, ctx.callbackQuery.message.caption.length - 1), {status: false, moneyOut: true})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
             bot.telegram.sendMessage('@payouts_bot', "УДАЛИТЬ\n\n" + ctx.callbackQuery.message.caption);
@@ -264,7 +264,7 @@ closeScene.action('❌ Закрыть задачу', ctx => {
         })
     }
     else{
-        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), {status: false, moneyOut: true})
+        Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 25, ctx.callbackQuery.message.text.length - 1), {status: false, moneyOut: true})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
             bot.telegram.sendMessage('@payouts_bot', "УДАЛИТЬ\n\n" + ctx.callbackQuery.message.text);
