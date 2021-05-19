@@ -465,6 +465,10 @@ bot.hears("🗄 Мои задания", (ctx) => {
 })
 bot.action('Открытые задания', async ctx => {
     await Order.find({ userId: ctx.callbackQuery.from.id, status: true }).then(data => {
+        if(data.length === 0) {
+            ctx.reply("Задания не найдены");
+            ctx.scene.leave();
+        }
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
@@ -494,6 +498,10 @@ bot.action('Открытые задания', async ctx => {
         });
     });
     await Order.find({ performerId: ctx.callbackQuery.from.id, status: true }).then(data => {
+        if(data.length === 0) {
+            ctx.reply("Задания не найдены");
+            ctx.scene.leave();
+        }
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
@@ -522,6 +530,10 @@ bot.action('Открытые задания', async ctx => {
 
 bot.action('Завершенные задания', async ctx => {
     await Order.find({ userId: ctx.callbackQuery.from.id, status: false }).then(data => {
+        if(data.length === 0) {
+            ctx.reply("Задания не найдены");
+            ctx.scene.leave();
+        }
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
@@ -547,6 +559,10 @@ bot.action('Завершенные задания', async ctx => {
         });
     });
     await Order.find({ performerId: ctx.callbackQuery.from.id, status: false }).then(data => {
+        if(data.length === 0) {
+            ctx.reply("Задания не найдены");
+            ctx.scene.leave();
+        }
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
