@@ -336,7 +336,7 @@ bot.action('🤝 Беру', ctx => {
                 ctx.telegram.sendMessage(ctx.callbackQuery.from.id, "Вы уже взялись за выполнение задачи. Перед тем как взять новую, завершите предыдущие.");
             }
             else {
-                await Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), { performerId: ctx.callbackQuery.from.id }).then(data => {
+                await Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), { performerId: ctx.callbackQuery.from.id }).then(data => {
                     ctx.editMessageCaption('В процессе\n\n' + ctx.callbackQuery.message.caption,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
                     bot.telegram.sendPhoto(`${ctx.callbackQuery.from.id}`,
                         ctx.callbackQuery.message.photo[2].file_id,
