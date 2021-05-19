@@ -393,12 +393,13 @@ bot.action('✅ Опубликовать', async (ctx, next) => {
         })
         await order.save().then(data => {
             id = data._id;
+            ctx.editMessageCaption(ctx.callbackQuery.message.caption, { ...Markup.inlineKeyboard([Markup.button.callback('🙌 Опубликовано', '🙌 Опубликовано')])});
+            bot.telegram.sendPhoto('@FastCleverFreelance', ctx.session.photo.file_id, {
+                caption: `${ctx.session.message} \n\n#${order.name}\n\nid: ${id}`,
+                parse_mode: 'HTML',
+                ...Markup.inlineKeyboard([Markup.button.callback('🤝 Беру', '🤝 Беру')])
+            })
         });
-        bot.telegram.sendPhoto('@FastCleverFreelance', ctx.session.photo.file_id, {
-            caption: `${ctx.session.message} \n\n#${order.name}\n\nid: ${id}`,
-            parse_mode: 'HTML',
-            ...Markup.inlineKeyboard([Markup.button.callback('🤝 Беру', '🤝 Беру')])
-        })
     } else {
         const order = new Order({
             created: new Date(),
@@ -412,12 +413,16 @@ bot.action('✅ Опубликовать', async (ctx, next) => {
         })
         await order.save().then(data => {
             id = data._id
-        });
-        bot.telegram.sendMessage('@FastCleverFreelance', `${ctx.session.message} \n\n#${order.name}\n\nid: ${id}`, {
-            parse_mode: "HTML",
-            ...Markup.inlineKeyboard([Markup.button.callback('🤝 Беру', '🤝 Беру')])
+            ctx.editMessageText(ctx.callbackQuery.message.text, { ...Markup.inlineKeyboard([Markup.button.callback('🙌 Опубликовано', '🙌 Опубликовано')])})
+            bot.telegram.sendMessage('@FastCleverFreelance', `${ctx.session.message} \n\n#${order.name}\n\nid: ${id}`, {
+                parse_mode: "HTML",
+                ...Markup.inlineKeyboard([Markup.button.callback('🤝 Беру', '🤝 Беру')])
+            });
         });
     }
+});
+bot.action('🙌 Опубликовано', ctx => {
+
 });
 bot.action('🤝 Беру', ctx => {
     if (ctx.callbackQuery.message.photo) {
