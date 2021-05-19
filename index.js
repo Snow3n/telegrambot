@@ -3,7 +3,6 @@ const express = require('express');
 const { Telegraf, Scenes, session, Markup } = require("telegraf");
 const Order = require('./model');
 const mongoose = require('mongoose');
-const { getBodyText } = require('telegraf-inline-menu/dist/source/body');
 require('dotenv').config();
 
 // db init
@@ -35,25 +34,25 @@ const main_keyboard = Markup.keyboard([
 const app = express(); // server init
 const bot = new Telegraf(process.env.TOKEN); // bot init
 // pay invoice
-const getInvoice = (id, price) => {
-    const invoice = {
-        chat_id: id,
-        provider_token: process.env.PROVIDER_TOKEN,
-        start_parameter: 'get_access',
-        title: 'Telegram bot',
-        description: 'Предоплата услуг фрилансера',
-        currency: 'UAH',
-        prices: [{ label: `Telegram bot`, amount: (Number(price) * 0.08 + Number(price)) * 100 }],
-        photo_url: 'https://picsum.photos/300/200',
-        photo_width: 300,
-        photo_height: 200,
-        payload: {
-            unique_id: `${id}_${Number(new Date())}`,
-            provider_token: process.env.PROVIDER_TOKEN
-        }
-    }
-    return invoice
-}
+// const getInvoice = (id, price) => {
+//     const invoice = {
+//         chat_id: id,
+//         provider_token: process.env.PROVIDER_TOKEN,
+//         start_parameter: 'get_access',
+//         title: 'Telegram bot',
+//         description: 'Предоплата услуг фрилансера',
+//         currency: 'UAH',
+//         prices: [{ label: `Telegram bot`, amount: (Number(price) * 0.08 + Number(price)) * 100 }],
+//         photo_url: 'https://picsum.photos/300/200',
+//         photo_width: 300,
+//         photo_height: 200,
+//         payload: {
+//             unique_id: `${id}_${Number(new Date())}`,
+//             provider_token: process.env.PROVIDER_TOKEN
+//         }
+//     }
+//     return invoice
+// }
 // scenes section
 const confirmScene = new Scenes.BaseScene('confirm');
 confirmScene.enter(ctx => {
@@ -260,7 +259,7 @@ closeScene.action('❌ Закрыть задачу', ctx => {
         Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), {status: false, moneyOut: true})
         .then(data => {
             ctx.reply("Вы закрыли задание", main_keyboard);
-            bot.telegram.sendMessage('@payouts_bot', /*ctx.telegram.getFile(data.imageId.file_id) ,*/"УДАЛИТЬ\n\n" + ctx.callbackQuery.message.caption);
+            bot.telegram.sendMessage('@payouts_bot', "УДАЛИТЬ\n\n" + ctx.callbackQuery.message.caption);
             ctx.scene.leave();
         })
     }
@@ -428,11 +427,11 @@ bot.action('🤝 Беру', ctx => {
             }
             else {
                 await Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 24, ctx.callbackQuery.message.caption.length), { performerId: ctx.callbackQuery.from.id }).then(data => {
-                    ctx.editMessageCaption('📙 В процессе\n\n' + ctx.callbackQuery.message.caption,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
+                    ctx.editMessageCaption('📙 В процессе\n\n' + ctx.callbackQuery.message.caption, {...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
                     bot.telegram.sendPhoto(`${ctx.callbackQuery.from.id}`,
                         ctx.callbackQuery.message.photo[ctx.callbackQuery.message.photo.length - 1].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${bot.telegram.getChatMembersCount(chat_invite_links[0].slice(22, 38)) <= 2 ? chat_invite_links[0] : bot.telegram.getChatMembersCount(chat_invite_links[1].slice(22, 38)) <= 2 ? chat_invite_links[1] : bot.telegram.getChatMembersCount(chat_invite_links[2].slice(22, 38)) <= 2 ? chat_invite_links[2] : "Пожалуйста обратитесь к администратору"}`, parse_mode: "HTML" });
-                    bot.telegram.sendPhoto(data.userId/*ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 10, ctx.callbackQuery.message.caption.length).trim()*/,
+                    bot.telegram.sendPhoto(data.userId,
                         ctx.callbackQuery.message.photo[ctx.callbackQuery.message.photo.length - 1].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\n@${ctx.callbackQuery.from.username} принял вашу задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
                 });
@@ -446,10 +445,10 @@ bot.action('🤝 Беру', ctx => {
             }
             else {
                 await Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), { performerId: ctx.callbackQuery.from.id }).then(data => {
-                    ctx.editMessageText('В процессе\n\n' + ctx.callbackQuery.message.text,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
+                    ctx.editMessageText('В процессе\n\n' + ctx.callbackQuery.message.text, {...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
                     bot.telegram.sendMessage(`${ctx.callbackQuery.from.id}`,
                         `${ctx.callbackQuery.message.text}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${bot.telegram.getChatMembersCount(chat_invite_links[0].slice(22, 38)) <= 2 ? chat_invite_links[0] : bot.telegram.getChatMembersCount(chat_invite_links[1].slice(22, 38)) <= 2 ? chat_invite_links[1] : bot.telegram.getChatMembersCount(chat_invite_links[2].slice(22, 38)) <= 2 ? chat_invite_links[2] : "Пожалуйста обратитесь к администратору"}`, { parse_mode: "HTML" });
-                    bot.telegram.sendMessage(data.userId/*ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 10, ctx.callbackQuery.message.text.length).trim()*/,
+                    bot.telegram.sendMessage(data.userId,
                         `${ctx.callbackQuery.message.text}\n\n${ctx.callbackQuery.from.username} принял вашу задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, { parse_mode: "HTML" });
                 });
             }
@@ -660,4 +659,4 @@ process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
 app.listen(process.env.PORT);
-// TODO: rating
+// TODO: rating, edit order, emoji:)
