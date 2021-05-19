@@ -305,7 +305,7 @@ bot.action('✅ Опубликовать', async (ctx, next) => {
             id = data._id;
         });
         bot.telegram.sendPhoto('@FastCleverFreelance', ctx.session.photo.file_id, {
-            caption: `id: ${id}\n\n${ctx.session.message} \n\n#${order.name}\n\nuser_id: ${ctx.callbackQuery.from.id}`,
+            caption: `${ctx.session.message} \n\n#${order.name}\n\nid: ${id}`,
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([Markup.button.callback('🤝 Беру', '🤝 Беру')])
         })
@@ -323,7 +323,7 @@ bot.action('✅ Опубликовать', async (ctx, next) => {
         await order.save().then(data => {
             id = data._id
         });
-        bot.telegram.sendMessage('@FastCleverFreelance', `id: ${id}\n\n${ctx.session.message} \n\n#${order.name}\n\nuser_id: ${ctx.callbackQuery.from.id}`, {
+        bot.telegram.sendMessage('@FastCleverFreelance', `${ctx.session.message} \n\n#${order.name}\n\nid: ${id}`, {
             parse_mode: "HTML",
             ...Markup.inlineKeyboard([Markup.button.callback('🤝 Беру', '🤝 Беру')])
         });
@@ -336,12 +336,12 @@ bot.action('🤝 Беру', ctx => {
                 ctx.telegram.sendMessage(ctx.callbackQuery.from.id, "Вы уже взялись за выполнение задачи. Перед тем как взять новую, завершите предыдущие.");
             }
             else {
-                await Order.findByIdAndUpdate(ctx.callbackQuery.message.caption.slice(4, 28), { performerId: ctx.callbackQuery.from.id }).then(data => {
-                    ctx.editMessageReplyMarkup(/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]));
+                await Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), { performerId: ctx.callbackQuery.from.id }).then(data => {
+                    ctx.editMessageCaption('В процессе' + ctx.callbackQuery.message.caption,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
                     bot.telegram.sendPhoto(`${ctx.callbackQuery.from.id}`,
                         ctx.callbackQuery.message.photo[2].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
-                    bot.telegram.sendPhoto(ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 10, ctx.callbackQuery.message.caption.length).trim(),
+                    bot.telegram.sendPhoto(data.userId/*ctx.callbackQuery.message.caption.slice(ctx.callbackQuery.message.caption.length - 10, ctx.callbackQuery.message.caption.length).trim()*/,
                         ctx.callbackQuery.message.photo[2].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\n@${ctx.callbackQuery.from.username} принял вашу задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
                 });
@@ -354,18 +354,18 @@ bot.action('🤝 Беру', ctx => {
                 ctx.telegram.sendMessage(ctx.callbackQuery.from.id, "Вы уже взялись за выполнение задачи. Перед тем как взять новую, завершите предыдущие.");
             }
             else {
-                await Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(4, 28), { performerId: ctx.callbackQuery.from.id }).then(data => {
-                    ctx.editMessageReplyMarkup(/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')]));
+                await Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), { performerId: ctx.callbackQuery.from.id }).then(data => {
+                    ctx.editMessageText('В процессе' + ctx.callbackQuery.message.text,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
                     bot.telegram.sendMessage(`${ctx.callbackQuery.from.id}`,
                         `${ctx.callbackQuery.message.text}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, { parse_mode: "HTML" });
-                    bot.telegram.sendMessage(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 10, ctx.callbackQuery.message.text.length).trim(),
+                    bot.telegram.sendMessage(data.userId/*ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 10, ctx.callbackQuery.message.text.length).trim()*/,
                         `${ctx.callbackQuery.message.text}\n\n${ctx.callbackQuery.from.username} принял вашу задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, { parse_mode: "HTML" });
                 });
             }
         })
     }
 });
-bot.hears("🗄 Мои задания", async (ctx) => {
+bot.hears("🗄 Мои задания", (ctx) => {
     ctx.reply("Выберите фильтр", Markup.inlineKeyboard([Markup.button.callback('Открытые задания', 'Открытые задания'), Markup.button.callback('Завершенные задания', 'Завершенные задания')]));
 })
 bot.action('Открытые задания', async ctx => {
@@ -381,8 +381,8 @@ bot.action('Открытые задания', async ctx => {
                     \nДедлайн: <b>${d.deadline}</b>, 
                     \nЦена: <b>${d.price}</b>`,
                     parse_mode: "HTML",
-                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
-                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
+                    ...d.paid ? null : Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])),
+                    ...d.status ? null : Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])),
                 })
             } else {
                 ctx.reply(`Вы заказчик
@@ -392,8 +392,8 @@ bot.action('Открытые задания', async ctx => {
             \nДедлайн: <b>${d.deadline}</b>, 
             \nЦена: <b>${d.price}</b>`, {
                     parse_mode: "HTML",
-                    ...d.paid ? Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])) : null,
-                    ...d.status ? Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])) : null,
+                    ...d.paid ? null : Markup.inlineKeyboard(Markup.button.callback(['💸 Оплатить задачу', '💸 Оплатить задачу'])),
+                    ...d.status ? null : Markup.inlineKeyboard(Markup.button.callback(['✅ Завершить задачу', '✅ Завершить задачу'])),
                 });
             }
         });
