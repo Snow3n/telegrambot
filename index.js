@@ -353,7 +353,7 @@ priceScene.on("text", async (ctx) => {
 });
 priceScene.on("message", ctx => ctx.reply("🥺я не понимаю, попробуйте буквы..."));
 
-const stage = new Scenes.Stage([nameScene, descriptionScene, photoScene, deadlineScene, priceScene, chatIdScene, closeScene, payoutScene, confirmScene]);
+const stage = new Scenes.Stage([nameScene, descriptionScene, photoScene, deadlineScene, priceScene, payScene, closeScene, payoutScene, confirmScene]);
 
 bot.use(session());
 bot.use(stage.middleware());
@@ -600,11 +600,11 @@ bot.command('close', ctx => {
 });
 
 bot.hears('💸 Оплатить задачу', ctx => {
-    ctx.scene.enter('chatId');
+    ctx.scene.enter('pay');
 })
 
 bot.command('pay', (ctx) => {
-    ctx.scene.enter("chatId");
+    ctx.scene.enter("pay");
 });
 
 bot.on('pre_checkout_query', (ctx) => ctx.answerPreCheckoutQuery(true)); // ответ на предварительный запрос по оплате
