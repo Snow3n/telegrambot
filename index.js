@@ -337,7 +337,7 @@ bot.action('🤝 Беру', ctx => {
             }
             else {
                 await Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), { performerId: ctx.callbackQuery.from.id }).then(data => {
-                    ctx.editMessageCaption('В процессе' + ctx.callbackQuery.message.caption,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
+                    ctx.editMessageCaption('В процессе\n\n' + ctx.callbackQuery.message.caption,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
                     bot.telegram.sendPhoto(`${ctx.callbackQuery.from.id}`,
                         ctx.callbackQuery.message.photo[2].file_id,
                         { caption: `${ctx.callbackQuery.message.caption}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, parse_mode: "HTML" });
@@ -355,7 +355,7 @@ bot.action('🤝 Беру', ctx => {
             }
             else {
                 await Order.findByIdAndUpdate(ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 24, ctx.callbackQuery.message.text.length), { performerId: ctx.callbackQuery.from.id }).then(data => {
-                    ctx.editMessageText('В процессе' + ctx.callbackQuery.message.text,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
+                    ctx.editMessageText('В процессе\n\n' + ctx.callbackQuery.message.text,/*ctx.callbackQuery.message.chat.id, ctx.callbackQuery.message.message_id, */{...Markup.inlineKeyboard([Markup.button.callback('✅ Забрали', '✅ Забрали')])});
                     bot.telegram.sendMessage(`${ctx.callbackQuery.from.id}`,
                         `${ctx.callbackQuery.message.text}\n\nВы приняли задачу, чтобы продолжить вступите в чат: \n${chat_invite_links[0]}`, { parse_mode: "HTML" });
                     bot.telegram.sendMessage(data.userId/*ctx.callbackQuery.message.text.slice(ctx.callbackQuery.message.text.length - 10, ctx.callbackQuery.message.text.length).trim()*/,
