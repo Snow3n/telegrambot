@@ -369,7 +369,7 @@ bot.hears("🗄 Мои задания", async (ctx) => {
     ctx.reply("Выберите фильтр", Markup.inlineKeyboard([Markup.button.callback('Открытые задания', 'Открытые задания'), Markup.button.callback('Завершенные задания', 'Завершенные задания')]));
 })
 bot.action('Открытые задания', async ctx => {
-    await Order.find({ userId: ctx.message.from.id, status: true }).then(data => {
+    await Order.find({ userId: ctx.callbackQuery.message.from.id, status: true }).then(data => {
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
@@ -398,7 +398,7 @@ bot.action('Открытые задания', async ctx => {
             }
         });
     });
-    await Order.find({ performerId: ctx.message.from.id, status: true }).then(data => {
+    await Order.find({ performerId: ctx.callbackQuery.message.from.id, status: true }).then(data => {
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
@@ -430,7 +430,7 @@ bot.action('Открытые задания', async ctx => {
 });
 
 bot.action('Завершенные задания', async ctx => {
-    await Order.find({ userId: ctx.message.from.id, status: false }).then(data => {
+    await Order.find({ userId: ctx.callbackQuery.message.from.id, status: false }).then(data => {
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
@@ -459,7 +459,7 @@ bot.action('Завершенные задания', async ctx => {
             }
         });
     });
-    await Order.find({ performerId: ctx.message.from.id, status: false }).then(data => {
+    await Order.find({ performerId: ctx.callbackQuery.message.from.id, status: false }).then(data => {
         data.map(async (d) => {
             if (d.imageId) {
                 const link = await ctx.telegram.getFile(d.imageId);
