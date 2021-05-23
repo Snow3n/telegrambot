@@ -33,26 +33,7 @@ const main_keyboard = Markup.keyboard([
 
 const app = express(); // server init
 const bot = new Telegraf(process.env.TOKEN); // bot init
-// pay invoice
-// const getInvoice = (id, price) => {
-//     const invoice = {
-//         chat_id: id,
-//         provider_token: process.env.PROVIDER_TOKEN,
-//         start_parameter: 'get_access',
-//         title: 'Telegram bot',
-//         description: 'Предоплата услуг фрилансера',
-//         currency: 'UAH',
-//         prices: [{ label: `Telegram bot`, amount: (Number(price) * 0.08 + Number(price)) * 100 }],
-//         photo_url: 'https://picsum.photos/300/200',
-//         photo_width: 300,
-//         photo_height: 200,
-//         payload: {
-//             unique_id: `${id}_${Number(new Date())}`,
-//             provider_token: process.env.PROVIDER_TOKEN
-//         }
-//     }
-//     return invoice
-// }
+
 // scenes section
 const confirmScene = new Scenes.BaseScene('confirm');
 confirmScene.enter(ctx => {
